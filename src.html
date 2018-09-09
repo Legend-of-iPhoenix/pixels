@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="text/javascript" async="" src="https://www.google-analytics.com/analytics.js"></script><script async="" src="https://www.googletagmanager.com/gtag/js?id=UA-109579764-3"></script><script>function gtag(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],gtag("js",new Date),gtag("config","UA-109579764-3");</script>
+  <title>Pixels</title>
+  <style type="text/css">
+    #pixels input, #palette input {
+      box-sizing: border-box;
+      border: none;
+      margin: 0; /*1px;*/
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      float: left;
+    }
+
+    #pixels input:nth-child(16n) {
+      clear: right;
+      float: none;
+      display: block;
+    }
+    #pixels input:focus, #palette input:focus {outline:0;}
+
+    #dl {
+      display: block;
+      clear: both;
+    }
+
+    textarea {
+      resize: none;
+      font: 10px monospace;
+    }
+
+  </style>
+</head>
+<body>
+  <div id="pixels"></div>
+  <div id="palette"></div>
+  <br />
+  <div id="dl">
+    <input type="button" onclick="document.querySelector('textarea').value = 'https://legend-of-iphoenix.github.io/pixels/?'+dl()" value="Share">
+    <textarea disabled id="data" rows="10" cols="15"></textarea>
+  </div>
+  <script type="text/javascript">
+    var globalColor = 0, isMouseDown = false, pixels = []
+    for (var i = 0; i <= 15; i++) {
+      pixels.push([]);
+      for (var j = 0; j <= 15; j++) {
+        document.getElementById("pixels").innerHTML += "<input type='button' id='"+i+"_"+j+"' onclick='paint("+i+","+j+", true)' oncontextmenu='contextMenuHandler("+i+","+j+"); return false' onmouseover='paint("+i+","+j+")' tabindex='-1'>";
+        pixels[i].push(7)
+      }
+      if (i<8)
+      document.getElementById("palette").innerHTML += "<input type='button' id='"+i+"' style='background-color: hsl(0,0%,"+Math.floor((i/7)*100)+"%);' onclick='setColor("+i+")' tabindex='-1'>";
+    }
+
+    function paint(i,j, ignore) {
+      if (isMouseDown !== false || ignore) {
+        document.getElementById(i+"_"+j).style.backgroundColor = isMouseDown == 0 || ignore ? "hsl(0,0%,"+Math.floor((globalColor/7)*100)+"%)" : "#fff"
+        pixels[i][j] = isMouseDown == 0 ? globalColor : "7"
+      }
+    }
+
+    function setColor(i) {
+      globalColor = i
+    }
+
+    window.onmousedown = function(event) {
+      isMouseDown = event.button;
+    }
+
+    window.onmouseup = function(event) {
+      isMouseDown = false;
+    }
+
+    function contextMenuHandler(i,j) {
+      isMouseDown=1;
+      paint(i,j)
+    }
+
+    function getMask(n) {
+      var maskData = "2640022AA54794694C5CCAA8321D4213201801C5263EA198B368E14EEC3EC2C9C96E6E2B6BD76C74B4AE7FDE55CD67CE81125E73C7399AD82969C00724D75B5A".match(/../g).map(x=>x.charCodeAt(0)); // very much overkill
+      for (var i = 0; i < n; i++) {
+        maskData.unshift(maskData.pop())
+      }
+      return maskData
+    }
+
+    function dl() {
+      var g = 0;
+      function convert(row, mask) {
+      var result = '';
+      row = row.map(x=>parseInt(x).toString(2).padStart(3,0));
+      var d = row[0]+row[1]+'0000000000', j = 0;
+      console.log(row)
+      for (var i = 2; i < 16; i+=2) {
+        console.log((d[j]+row[i] + row[i+1]))
+        console.log((getMask(mask+j)[0]))
+        result += String.fromCharCode(parseInt((d[j]+row[i] + row[i+1]),2) ^ (getMask(mask+j)[0]))
+        j++;
+      }
+      return result
+    }
+    return btoa(pixels.map((x,i)=>convert(x,7*i)).join('')).slice(0,-2)
+  }
+    window.onload = function() {
+      var s = location.search;
+      if (s.length == 151) {
+        atob(s.substring(1)+"==").split('').map((x, i) => {
+          var d = (x.charCodeAt(0) ^ (getMask(i)[0])).toString(2).padStart(7, 0)
+          
+          return [d[0], Math.floor(i / 7), d.slice(1, 4), d.slice(4, 7)]
+        }).reduce((a, x) => {
+          a[x[1]] ? a[x[1]].push(x) : a[x[1]] = [x];
+          return a
+        }, []).map((x,i) => x.reduce((a, _, n) => {
+          if (n < 3) {
+          a[0]+=_[0]
+          } else {
+          if (n != 6) {
+            a[1]+=_[0]
+            }
+          }
+          a[2+2*n]=_[2]
+          a[3+2*n]=_[3]
+          return a
+        },[...('0'.repeat(16).split(''))]).map(x=>parseInt(x,2)).map((x,j)=>{document.getElementById(i+'_'+j).style.backgroundColor = "hsl(0,0%,"+Math.floor((x/7)*100)+"%)"; pixels[i][j]=x}))
+      }
+    }
+  </script>
+</body>
+</html>
